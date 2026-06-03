@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TOEIC 700">
+<meta name="mobile-web-app-capable" content="yes">
+<title>TOEIC 700 單字卡</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg:          #F5F0E8;
+    --surface:     #EDE7D9;
+    --border:      #D6C9B0;
+    --deep:        #3D2F1F;
+    --mid:         #7A6248;
+    --muted:       #A89880;
+    --accent:      #B5714A;
+    --accent-soft: #E8C9B0;
+    --sage:        #7D9B76;
+    --sage-soft:   #D4E4D2;
+    --sand:        #C9AA7C;
+    --sand-soft:   #F0E4CC;
+    --white:       #FDFAF5;
+  }
+  html, body { height: 100%; background: var(--bg); font-family: Georgia, 'Times New Roman', serif; color: var(--deep); }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* header */
+  .header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); }
+  .header-eyebrow { font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-end; }
+  .header-title { font-size: 28px; font-weight: bold; color: var(--deep); letter-spacing: -0.5px; }
+  .header-stats { text-align: right; font-size: 12px; color: var(--muted); line-height: 1.8; }
+  .header-stats strong { color: var(--deep); }
+  .header-stats .streak { color: var(--accent); }
+  .progress-bar-wrap { margin-top: 12px; }
+  .progress-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .progress-bar-track { height: 4px; background: var(--border); border-radius: 2px; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
+
+  /* tabs */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tab-btn { flex: 1; padding: 13px; border: none; background: transparent; font-family: inherit; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); letter-spacing: .3px; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+  /* content */
+  .content { flex: 1; padding: 20px 20px 48px; overflow-y: auto; }
+
+  /* pills */
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .pill { padding: 5px 13px; border-radius: 20px; border: 1.5px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-family: inherit; cursor: pointer; letter-spacing: .3px; transition: all .15s; }
+  .pill.active-sage   { border-color: var(--sage);   background: var(--sage-soft);   color: var(--sage);   font-weight: 700; }
+  .pill.active-sand   { border-color: var(--sand);   background: var(--sand-soft);   color: #8B6914;       font-weight: 700; }
+  .pill.active-accent { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .pill.active-mid    { border-color: var(--mid);    background: var(--surface);     color: var(--mid);    font-weight: 700; }
+  .pill.active-deep   { border-color: var(--deep);   background: var(--surface);     color: var(--deep);   font-weight: 700; }
+
+  /* card counter */
+  .card-counter { text-align: center; font-size: 12px; color: var(--muted); letter-spacing: 1px; margin-bottom: 10px; }
+
+  /* flashcard */
+  .flashcard { background: var(--white); border: 1px solid var(--border); border-radius: 16px; min-height: 226px; padding: 30px 24px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(61,47,31,.07); user-select: none; position: relative; transition: box-shadow .2s; }
+  .flashcard:active { box-shadow: 0 1px 6px rgba(61,47,31,.1); }
+  .level-badge { position: absolute; top: 13px; right: 13px; font-size: 10px; font-weight: 700; border-radius: 6px; padding: 2px 8px; letter-spacing: .5px; }
+  .lv-400 { background: var(--sage-soft);   color: var(--sage); }
+  .lv-600 { background: var(--sand-soft);   color: #8B6914; }
+  .lv-800 { background: var(--accent-soft); color: var(--accent); }
+  .lv-990 { background: var(--surface);     color: var(--mid); }
+  .card-front { text-align: center; }
+  .card-pos { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-style: italic; }
+  .card-word { font-size: 38px; font-weight: bold; color: var(--deep); letter-spacing: 1px; margin-bottom: 18px; }
+  .card-hint { font-size: 11px; color: var(--border); letter-spacing: 2px; }
+  .card-back { text-align: center; width: 100%; }
+  .card-back .card-word { font-size: 22px; margin-bottom: 6px; }
+  .card-zh { display: inline-block; background: var(--accent-soft); color: var(--accent); font-size: 16px; font-weight: 700; padding: 4px 16px; border-radius: 8px; margin-bottom: 14px; }
+  .card-example { background: var(--surface); border-radius: 10px; padding: 11px 14px; font-size: 13px; color: var(--mid); line-height: 1.7; text-align: left; border-left: 3px solid var(--border); }
+
+  /* buttons */
+  .btn-row { display: flex; gap: 11px; margin-top: 14px; }
+  .btn { flex: 1; padding: 15px; border-radius: 12px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: .3px; transition: opacity .15s; }
+  .btn:active { opacity: .8; }
+  .btn-pass { border: 1.5px solid var(--border); background: var(--white); color: var(--muted); }
+  .btn-know { border: none; background: var(--accent); color: #fff; font-weight: 700; }
+  .card-note { text-align: center; font-size: 11px; color: var(--border); margin-top: 12px; letter-spacing: .5px; }
+
+  /* grammar */
+  .gram-dots { display: flex; gap: 7px; justify-content: center; margin-bottom: 18px; }
+  .gram-dot { height: 8px; border-radius: 4px; border: none; background: var(--border); cursor: pointer; padding: 0; transition: all .2s; }
+  .gram-dot.active { background: var(--accent); width: 24px !important; }
+  .gram-tag { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; letter-spacing: .5px; }
+  .tag-時態 { background: var(--accent-soft); color: var(--accent); }
+  .tag-文法 { background: var(--sage-soft);   color: var(--sage); }
+  .tag-子句 { background: var(--sand-soft);   color: #8B6914; }
+  .tag-詞性 { background: var(--surface);     color: var(--mid); }
+  .gram-title { font-size: 17px; font-weight: bold; color: var(--deep); }
+  .gram-header { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; }
+  .gram-rule { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 15px 17px; font-size: 14px; color: var(--mid); line-height: 1.8; margin-bottom: 12px; }
+  .gram-toeic { background: var(--sand-soft); border-radius: 10px; padding: 12px 15px; margin-bottom: 12px; border-left: 3px solid var(--sand); }
+  .gram-toeic-label { font-size: 10px; font-weight: 700; color: #8B6914; margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .gram-toeic-text { font-size: 13px; color: var(--mid); }
+  .gram-ex-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 7px; }
+  .gram-ex { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; margin-bottom: 6px; }
+  .gram-ex-en { font-size: 14px; color: var(--deep); margin-bottom: 2px; }
+  .gram-ex-zh { font-size: 12px; color: var(--muted); }
+  .gram-tip { background: var(--sage-soft); border-radius: 10px; padding: 13px 15px; border-left: 3px solid var(--sage); margin-bottom: 22px; }
+  .gram-tip-label { font-size: 10px; font-weight: 700; color: var(--sage); margin-bottom: 5px; letter-spacing: 1px; text-transform: uppercase; }
+  .gram-tip-text { font-size: 13px; color: var(--mid); line-height: 1.9; white-space: pre-line; }
+  .gram-nav { display: flex; gap: 10px; }
+  .btn-nav { flex: 1; padding: 13px; border-radius: 12px; font-family: inherit; font-size: 14px; cursor: pointer; transition: opacity .15s; }
+  .btn-nav:active { opacity: .8; }
+  .btn-nav-prev { border: 1.5px solid var(--border); background: transparent; color: var(--mid); }
+  .btn-nav-prev:disabled { color: var(--border); cursor: default; }
+  .btn-nav-next { border: none; background: var(--accent); color: #fff; font-weight: 700; }
+  .btn-nav-next:disabled { background: var(--surface); color: var(--border); cursor: default; }
+  .gram-page { text-align: center; font-size: 11px; color: var(--border); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ── data ──────────────────────────────────────────────────────────
+const VOCAB = [
+  // 400分
+  { word:"company",      pos:"n.",      zh:"公司；陪伴",              ex:"She works for a tech company in the Bay Area.",              lv:400 },
+  { word:"passenger",    pos:"n.",      zh:"乘客",                    ex:"All passengers should wear a mask on the train.",            lv:400 },
+  { word:"area",         pos:"n.",      zh:"地區；領域",              ex:"This building is located in a busy commercial area.",        lv:400 },
+  { word:"cashier",      pos:"n.",      zh:"收銀員",                  ex:"The cashier will help you with the return process.",         lv:400 },
+  { word:"amount",       pos:"n.",      zh:"數量；總額",              ex:"The amount of work I got for the quarter is ridiculous!",    lv:400 },
+  { word:"fee",          pos:"n.",      zh:"費用；服務費用",          ex:"There is an admission fee for the museum.",                  lv:400 },
+  { word:"appointment",  pos:"n.",      zh:"預約；任命",              ex:"I'll miss the meeting due to a doctor's appointment.",       lv:400 },
+  { word:"reservation",  pos:"n.",      zh:"預訂；保護區",            ex:"I'd like to make a reservation for eight people.",           lv:400 },
+  { word:"employee",     pos:"n.",      zh:"員工；受雇者",            ex:"The employee received a promotion for his hard work.",       lv:400 },
+  { word:"task",         pos:"n.",      zh:"任務；工作",              ex:"He has been assigned a challenging task.",                   lv:400 },
+  { word:"lobby",        pos:"n.",      zh:"大廳；門廊",              ex:"I met him in the hotel lobby last Monday.",                  lv:400 },
+  { word:"option",       pos:"n.",      zh:"選項；選擇",              ex:"Students have the option of studying abroad.",               lv:400 },
+  { word:"receipt",      pos:"n.",      zh:"收據；收到",              ex:"Don't forget to keep the receipt for your purchase.",        lv:400 },
+  { word:"pharmacy",     pos:"n.",      zh:"藥房；藥局",              ex:"You can pick up your medicines at the pharmacy next door.",  lv:400 },
+  { word:"destination",  pos:"n.",      zh:"目的地；終點",            ex:"Paris is a popular tourist destination in Europe.",          lv:400 },
+  { word:"goal",         pos:"n.",      zh:"目標",                    ex:"His goal was to get into Harvard University.",               lv:400 },
+  { word:"flight",       pos:"n.",      zh:"班機；航程",              ex:"I booked a flight to London for next week.",                 lv:400 },
+  { word:"brand",        pos:"n.",      zh:"品牌",                    ex:"The advertisement effectively promoted the brand.",          lv:400 },
+  { word:"site",         pos:"n.",      zh:"地點；場所",              ex:"The construction site is located downtown.",                 lv:400 },
+  { word:"payment",      pos:"n.",      zh:"支付；支付款項",          ex:"Please make the payment before the due date.",               lv:400 },
+  { word:"account",      pos:"n.",      zh:"帳戶；描述；客戶",        ex:"You'll need your passport to open a new account.",           lv:400 },
+  { word:"item",         pos:"n.",      zh:"項目；品項",              ex:"Let's move on to the last item on the agenda.",              lv:400 },
+  { word:"department",   pos:"n.",      zh:"部門",                    ex:"She works in the marketing department.",                     lv:400 },
+  { word:"client",       pos:"n.",      zh:"客戶；顧客",              ex:"The company provides excellent service to its clients.",     lv:400 },
+  { word:"fare",         pos:"n.",      zh:"車票價；車資",            ex:"How much is the fare to Kaohsiung?",                         lv:400 },
+  { word:"staff",        pos:"n.",      zh:"全體員工",                ex:"The staff is working hard to meet the deadline.",            lv:400 },
+  { word:"income",       pos:"n.",      zh:"收入",                    ex:"He earns a high income from his successful business.",       lv:400 },
+  { word:"equipment",    pos:"n.",      zh:"設備；裝備",              ex:"The lab has state-of-the-art equipment.",                    lv:400 },
+  { word:"software",     pos:"n.",      zh:"軟體",                    ex:"The company released new accounting software last month.",   lv:400 },
+  { word:"route",        pos:"n.",      zh:"路線；途徑",              ex:"She took the scenic route to San Francisco.",                lv:400 },
+  { word:"response",     pos:"n.",      zh:"回答；回應",              ex:"His response to the question was concise and clear.",        lv:400 },
+  { word:"budget",       pos:"n./adj.", zh:"預算；低廉的",            ex:"The department gets a small amount of the annual budget.",   lv:400 },
+  { word:"result",       pos:"n./v.",   zh:"結果；成果；導致",        ex:"The promotional campaign produced excellent results.",       lv:400 },
+  { word:"form",         pos:"n./v.",   zh:"表格；形成",              ex:"Please attach a recent photo to your application form.",     lv:400 },
+  { word:"discount",     pos:"n./v.",   zh:"打折；折扣",              ex:"The store is offering a discount on all items this weekend.",lv:400 },
+  { word:"refund",       pos:"n./v.",   zh:"退款",                    ex:"The item arrived too late. I'd like to get a refund.",       lv:400 },
+  { word:"demand",       pos:"n./v.",   zh:"需求；要求",              ex:"There is a high demand for the new product in the market.",  lv:400 },
+  { word:"award",        pos:"n./v.",   zh:"獎；授予",                ex:"The company gives out awards at the end of the year.",       lv:400 },
+  { word:"available",    pos:"adj.",    zh:"(人)有空的；(物)可取得的",ex:"Let's schedule an interview. When are you available?",       lv:400 },
+  { word:"common",       pos:"adj.",    zh:"普遍的；共同的",          ex:"Chen is a fairly common family name in Taiwan.",             lv:400 },
+  { word:"regular",      pos:"adj.",    zh:"定期的；經常的",          ex:"They have regular meetings to discuss project updates.",     lv:400 },
+  { word:"major",        pos:"adj.",    zh:"主要的；重大的",          ex:"Tokyo and New York are major financial centers.",            lv:400 },
+  { word:"annual",       pos:"adj.",    zh:"一年一次的；每年的",      ex:"Our company is having the annual end-of-year party today.",  lv:400 },
+  { word:"various",      pos:"adj.",    zh:"各式各樣的；多種多樣的",  ex:"The hat is available in various colors.",                    lv:400 },
+  { word:"suitable",     pos:"adj.",    zh:"合適的",                  ex:"This movie is not suitable for children.",                   lv:400 },
+  { word:"temporary",    pos:"adj.",    zh:"暫時的；臨時的",          ex:"I am currently working in a temporary position.",            lv:400 },
+  { word:"limited",      pos:"adj.",    zh:"有限的；限定的",          ex:"The company has limited resources to invest in new projects.",lv:400 },
+  { word:"entire",       pos:"adj.",    zh:"全部的；整個的",          ex:"He read the entire book in just one day.",                   lv:400 },
+  { word:"deliver",      pos:"v.",      zh:"遞送；發表演說",          ex:"The courier will deliver the package tomorrow.",             lv:400 },
+  { word:"confirm",      pos:"v.",      zh:"確認",                    ex:"Please confirm your personal information on the form.",      lv:400 },
+  { word:"cancel",       pos:"v.",      zh:"取消",                    ex:"Your membership was canceled due to late payments.",         lv:400 },
+  { word:"apply",        pos:"v.",      zh:"申請；適用",              ex:"He applied for the manager position.",                       lv:400 },
+  { word:"reduce",       pos:"v.",      zh:"減少；降低",              ex:"We need to reduce our expenses to save money.",              lv:400 },
+  { word:"attend",       pos:"v.",      zh:"參加；出席",              ex:"He did not attend the meeting yesterday due to a headache.", lv:400 },
+  { word:"remind",       pos:"v.",      zh:"提醒",                    ex:"Don't forget to remind me about the meeting tomorrow.",      lv:400 },
+  { word:"compare",      pos:"v.",      zh:"比較；對照",              ex:"We should compare the options before making the decision.",  lv:400 },
+  { word:"attract",      pos:"v.",      zh:"吸引",                    ex:"The colorful decorations will attract customers.",           lv:400 },
+  { word:"develop",      pos:"v.",      zh:"發展；開發",              ex:"The company is planning to develop new products next year.", lv:400 },
+  { word:"hire",         pos:"v.",      zh:"雇用；租用",              ex:"Let's hire someone professional to do our taxes this year.", lv:400 },
+  { word:"recommend",    pos:"v.",      zh:"推薦；介紹",              ex:"I highly recommend this restaurant for its delicious food.", lv:400 },
+  { word:"book",         pos:"v.",      zh:"預訂",                    ex:"I would like to book a table for four at 7 P.M. tomorrow.",  lv:400 },
+  { word:"respond",      pos:"v.",      zh:"回答；回應",              ex:"I will respond to your email as soon as possible.",          lv:400 },
+  { word:"replace",      pos:"v.",      zh:"取代；代替",              ex:"It's time to replace the old furniture.",                   lv:400 },
+
+  // 600分
+  { word:"construction", pos:"n.",      zh:"建造；建設",              ex:"The construction of the new building will start next month.",lv:600 },
+  { word:"subscription", pos:"n.",      zh:"訂閱",                    ex:"She just signed up for a one-year magazine subscription.",   lv:600 },
+  { word:"competitor",   pos:"n.",      zh:"競爭者；對手",            ex:"They lost the business to a competitor.",                   lv:600 },
+  { word:"certificate",  pos:"n.",      zh:"證書；證明",              ex:"She received a certificate for completing the training.",    lv:600 },
+  { word:"trend",        pos:"n.",      zh:"趨勢；傾向",              ex:"There's been an upward trend in sales in the last few years.",lv:600 },
+  { word:"summary",      pos:"n.",      zh:"摘要",                    ex:"Please provide a short summary of the meeting.",             lv:600 },
+  { word:"invoice",      pos:"n.",      zh:"付款清單；發票",          ex:"We will send you an invoice for the total course fees.",     lv:600 },
+  { word:"deadline",     pos:"n.",      zh:"截止日",                  ex:"Management has agreed to extend the deadline.",              lv:600 },
+  { word:"conference",   pos:"n.",      zh:"研討會；大會",            ex:"We attended the conference to fulfill our PD requirement.",  lv:600 },
+  { word:"performance",  pos:"n.",      zh:"表現；表演",              ex:"Her performance in the play was outstanding.",               lv:600 },
+  { word:"assignment",   pos:"n.",      zh:"任務；工作",              ex:"My boss gave me a tough assignment today.",                  lv:600 },
+  { word:"industry",     pos:"n.",      zh:"產業；工業",              ex:"The automotive industry plays a crucial role in the economy.",lv:600 },
+  { word:"donation",     pos:"n.",      zh:"捐獻；捐贈",              ex:"The donation will be used to support education programs.",   lv:600 },
+  { word:"community",    pos:"n.",      zh:"社群；團體；社區",        ex:"There is a large LGBTQ community in San Francisco.",         lv:600 },
+  { word:"category",     pos:"n.",      zh:"類別；種類",              ex:"This book belongs to the sci-fi category.",                  lv:600 },
+  { word:"application",  pos:"n.",      zh:"申請；應用軟體",          ex:"The deadline for the application is this Friday.",           lv:600 },
+  { word:"registration", pos:"n.",      zh:"登記；報到；註冊",        ex:"Registration for the event is now open.",                   lv:600 },
+  { word:"transportation",pos:"n.",     zh:"運輸；交通工具",          ex:"Public transportation is a cost-effective way to travel.",   lv:600 },
+  { word:"promotion",    pos:"n.",      zh:"升遷；促銷",              ex:"The manager received a promotion to regional director.",     lv:600 },
+  { word:"majority",     pos:"n.",      zh:"大多數",                  ex:"The majority of our employees have master's degrees.",       lv:600 },
+  { word:"extension",    pos:"n.",      zh:"分機；展延；擴建部分",    ex:"The extension number for the reception is 101.",             lv:600 },
+  { word:"degree",       pos:"n.",      zh:"程度；學位",              ex:"She has a high degree of expertise in her field.",           lv:600 },
+  { word:"policy",       pos:"n.",      zh:"政策；保險單",            ex:"The new policy aims to promote environmental sustainability.",lv:600 },
+  { word:"investment",   pos:"n.",      zh:"投資",                    ex:"He made a wise investment that yielded high returns.",       lv:600 },
+  { word:"maintenance",  pos:"n.",      zh:"維護；保養",              ex:"Regular maintenance keeps the equipment in good condition.", lv:600 },
+  { word:"proposal",     pos:"n.",      zh:"提案",                    ex:"Did he approve my proposal?",                               lv:600 },
+  { word:"agenda",       pos:"n.",      zh:"議程；會議待討論事項",    ex:"The agenda for the meeting includes several important topics.",lv:600 },
+  { word:"feedback",     pos:"n.",      zh:"意見回饋",                ex:"The feedback is used to modify the course for next year.",   lv:600 },
+  { word:"quarter",      pos:"n.",      zh:"季度",                    ex:"The financial report shows an increase in sales this quarter.",lv:600 },
+  { word:"itinerary",    pos:"n.",      zh:"預定行程；行程安排",      ex:"The travel agency provided us with a detailed itinerary.",   lv:600 },
+  { word:"reputation",   pos:"n.",      zh:"名譽；名聲",              ex:"The company's reputation for quality is well-known.",        lv:600 },
+  { word:"contract",     pos:"n./v.",   zh:"合約；訂合約",            ex:"We signed a contract with the supplier.",                    lv:600 },
+  { word:"profit",       pos:"n./v.",   zh:"利潤；獲利",              ex:"The company reported a significant increase in profits.",    lv:600 },
+  { word:"access",       pos:"n./v.",   zh:"有權使用；進入",          ex:"The ID card will give you access to the building.",          lv:600 },
+  { word:"deposit",      pos:"n./v.",   zh:"訂金；押金",              ex:"He put a deposit on the house.",                             lv:600 },
+  { word:"feature",      pos:"n./v.",   zh:"功能；特色；以…為特色",   ex:"Our classes feature hands-on and interactive activities.",   lv:600 },
+  { word:"flexible",     pos:"adj.",    zh:"有彈性的；可變通的",      ex:"Yoga exercises can make your body more flexible.",           lv:600 },
+  { word:"effective",    pos:"adj.",    zh:"生效的；有效的",          ex:"You are suspended for two weeks, effective immediately.",    lv:600 },
+  { word:"ongoing",      pos:"adj.",    zh:"進行中的；持續存在的",    ex:"The ongoing project is scheduled to be completed next month.",lv:600 },
+  { word:"reasonable",   pos:"adj.",    zh:"合理的",                  ex:"The rent here is reasonable, and the location is perfect.",  lv:600 },
+  { word:"appropriate",  pos:"adj.",    zh:"適當的；恰當的",          ex:"Please wear appropriate attire for the formal event.",       lv:600 },
+  { word:"postpone",     pos:"v.",      zh:"延後；延期",              ex:"The meeting has been postponed to next week.",               lv:600 },
+  { word:"reschedule",   pos:"v.",      zh:"改期",                    ex:"We had to reschedule the meeting due to a conflict.",        lv:600 },
+  { word:"submit",       pos:"v.",      zh:"提交",                    ex:"Please submit your application before the deadline.",        lv:600 },
+  { word:"extend",       pos:"v.",      zh:"延長；擴展",              ex:"Management has agreed to extend the deadline.",              lv:600 },
+  { word:"promote",      pos:"v.",      zh:"促銷；推廣；升遷",        ex:"Companies are always thinking of ways to promote products.", lv:600 },
+  { word:"donate",       pos:"v.",      zh:"捐獻；捐贈",              ex:"They donate large sums of money to the Red Cross every year.",lv:600 },
+  { word:"transfer",     pos:"v.",      zh:"轉移；調部門；轉乘",      ex:"We were transferred from one bus to another.",               lv:600 },
+  { word:"launch",       pos:"v.",      zh:"開始；推出",              ex:"We're going to launch a recruitment drive next month.",      lv:600 },
+  { word:"negotiate",    pos:"v.",      zh:"協商；談判",              ex:"He attempted to negotiate his salary with HR.",              lv:600 },
+
+  // 800分
+  { word:"strategy",     pos:"n.",      zh:"策略；戰略",              ex:"Our team needs a strategy to increase sales.",               lv:800 },
+  { word:"revenue",      pos:"n.",      zh:"公司收益；政府稅收",      ex:"The company's revenue increased significantly this quarter.",lv:800 },
+  { word:"efficiency",   pos:"n.",      zh:"效率；效能",              ex:"The efficiency of the production process has been improved.", lv:800 },
+  { word:"capacity",     pos:"n.",      zh:"容納量；能力",            ex:"The stadium has a seating capacity of 10,000 people.",       lv:800 },
+  { word:"priority",     pos:"n.",      zh:"優先事項",                ex:"Our main priority is to provide excellent customer service.", lv:800 },
+  { word:"perspective",  pos:"n.",      zh:"觀點",                    ex:"From a historical perspective, this event is significant.",  lv:800 },
+  { word:"commitment",   pos:"n.",      zh:"承諾；奉獻",              ex:"The team members showed great commitment to their work.",    lv:800 },
+  { word:"criteria",     pos:"n.",      zh:"評判標準",                ex:"Meeting all the criteria is essential for success.",         lv:800 },
+  { word:"component",    pos:"n.",      zh:"零件；組成部分",          ex:"The technician replaced a faulty component in the machine.", lv:800 },
+  { word:"asset",        pos:"n.",      zh:"資產；優勢",              ex:"The new software system is a valuable asset.",               lv:800 },
+  { word:"innovation",   pos:"n.",      zh:"創新",                    ex:"The company's latest innovation increased productivity by 50%.",lv:800 },
+  { word:"transition",   pos:"n.",      zh:"轉變；過渡期",            ex:"The company is going through a transition phase.",           lv:800 },
+  { word:"coverage",     pos:"n.",      zh:"新聞報導；保險範圍",      ex:"The news coverage of the event was extensive.",              lv:800 },
+  { word:"compensation", pos:"n.",      zh:"薪資報酬；補償",          ex:"This company offers better compensation than my previous one.",lv:800 },
+  { word:"expansion",    pos:"n.",      zh:"擴展",                    ex:"The company plans for expansion into new markets next year.", lv:800 },
+  { word:"procedure",    pos:"n.",      zh:"程序",                    ex:"Please follow the procedure outlined in the manual.",        lv:800 },
+  { word:"efficient",    pos:"adj.",    zh:"有效率的",                ex:"The new machine is more efficient and requires less energy.", lv:800 },
+  { word:"mandatory",    pos:"adj.",    zh:"強制的；法定的",          ex:"Wearing a helmet is mandatory for all cyclists.",            lv:800 },
+  { word:"significant",  pos:"adj.",    zh:"顯著的；重要的",          ex:"That was a very significant moment in my life.",             lv:800 },
+  { word:"consecutive",  pos:"adj.",    zh:"連續的；接連的",          ex:"The company reported five consecutive quarters of growth.",  lv:800 },
+  { word:"crucial",      pos:"adj.",    zh:"至關重要的",              ex:"Time management is crucial in a fast-paced environment.",    lv:800 },
+  { word:"eligible",     pos:"adj.",    zh:"有資格的",                ex:"All staffs are eligible for paid sick days.",                lv:800 },
+  { word:"reliable",     pos:"adj.",    zh:"可靠的；可信賴的",        ex:"He is a reliable source of information for industry trends.",lv:800 },
+  { word:"compatible",   pos:"adj.",    zh:"相容的；可共存的",        ex:"The software may not be compatible with older devices.",     lv:800 },
+  { word:"sufficient",   pos:"adj.",    zh:"足夠的；充足的",          ex:"We have sufficient time to complete the task.",              lv:800 },
+  { word:"implement",    pos:"v.",      zh:"實施；執行",              ex:"The new rules will be implemented immediately.",             lv:800 },
+  { word:"evaluate",     pos:"v.",      zh:"評估；估值",              ex:"The manager will evaluate the performance of employees.",    lv:800 },
+  { word:"collaborate",  pos:"v.",      zh:"合作",                    ex:"We collaborate with our partners to develop new products.",  lv:800 },
+  { word:"analyze",      pos:"v.",      zh:"分析",                    ex:"We'll take the problem apart and analyze it in great detail.",lv:800 },
+  { word:"establish",    pos:"v.",      zh:"建立；設立",              ex:"The company plans to establish a new branch in the city center.",lv:800 },
+  { word:"recruit",      pos:"v.",      zh:"招聘",                    ex:"The company plans to recruit new employees next month.",     lv:800 },
+  { word:"retain",       pos:"v.",      zh:"保持；保留",              ex:"They were able to retain most of their existing customers.", lv:800 },
+  { word:"generate",     pos:"v.",      zh:"產生；造成",              ex:"The wind turbines generate electricity from renewable sources.",lv:800 },
+  { word:"allocate",     pos:"v.",      zh:"分配；分派",              ex:"The manager allocated duties to the assistants.",            lv:800 },
+  { word:"streamline",   pos:"v.",      zh:"簡化；精簡流程",          ex:"We need to streamline the process to improve efficiency.",   lv:800 },
+
+  // 990分
+  { word:"compliance",   pos:"n.",      zh:"遵守",                    ex:"The company ensured compliance with safety regulations.",    lv:990 },
+  { word:"acquisition",  pos:"n.",      zh:"收購；獲得",              ex:"The company announced its acquisition of a software firm.",  lv:990 },
+  { word:"stakeholder",  pos:"n.",      zh:"利害關係人",              ex:"The stakeholders met to discuss the merger proposal.",       lv:990 },
+  { word:"reimbursement",pos:"n.",      zh:"報帳；核銷",              ex:"You can get reimbursements for work-related expenses.",      lv:990 },
+  { word:"synergy",      pos:"n.",      zh:"協同效應",                ex:"The merger created powerful synergy between the companies.", lv:990 },
+  { word:"proficiency",  pos:"n.",      zh:"精通；熟練程度",          ex:"High proficiency in English is required for this position.", lv:990 },
+  { word:"discrepancy",  pos:"n.",      zh:"差異；不一致",            ex:"There was a discrepancy in the quarterly financial reports.", lv:990 },
+  { word:"infrastructure",pos:"n.",     zh:"基礎設施；基礎建設",      ex:"The city needs to upgrade its aging infrastructure.",        lv:990 },
+  { word:"procurement",  pos:"n.",      zh:"採購；取得",              ex:"The procurement department negotiated better prices.",       lv:990 },
+  { word:"subsidiary",   pos:"n.",      zh:"子公司",                  ex:"The company established a subsidiary in Europe.",            lv:990 },
+  { word:"severance",    pos:"n.",      zh:"資遣費；切斷",            ex:"The company offered three months' severance to laid-off employees.",lv:990 },
+  { word:"turnover",     pos:"n.",      zh:"員工流動率；營業額",      ex:"The company experienced high employee turnover last quarter.",lv:990 },
+  { word:"sustainability",pos:"n.",     zh:"永續性",                  ex:"The company prioritizes sustainability in its manufacturing.",lv:990 },
+  { word:"liability",    pos:"n.",      zh:"法律責任；負債",          ex:"The company has liability for any product safety issues.",   lv:990 },
+  { word:"audit",        pos:"n.",      zh:"審計；查帳",              ex:"The company conducts an annual audit of its finances.",      lv:990 },
+  { word:"expertise",    pos:"n.",      zh:"專門知識；專門技能",      ex:"She brings expertise in financial and technical matters.",   lv:990 },
+  { word:"incentive",    pos:"n.",      zh:"誘因；激勵措施",          ex:"The promise of a bonus serves as an incentive to work harder.",lv:990 },
+  { word:"integrity",    pos:"n.",      zh:"誠信",                    ex:"The company values integrity in all business dealings.",     lv:990 },
+  { word:"constraint",   pos:"n.",      zh:"限制；約束",              ex:"Due to budget constraints, the project was suspended.",      lv:990 },
+  { word:"analytics",    pos:"n.",      zh:"分析；分析方法",          ex:"The marketing team relies heavily on customer analytics data.",lv:990 },
+  { word:"outsource",    pos:"v.",      zh:"外包；委外",              ex:"The company decided to outsource its customer service.",     lv:990 },
+  { word:"leverage",     pos:"v./n.",   zh:"利用；借助；影響力",      ex:"The company leveraged its assets to secure funding.",        lv:990 },
+  { word:"facilitate",   pos:"v.",      zh:"促進；使便利",            ex:"The new software will facilitate data analysis.",            lv:990 },
+  { word:"mitigate",     pos:"v.",      zh:"減輕；減緩",              ex:"The new policy helped mitigate the company's financial losses.",lv:990 },
+  { word:"optimize",     pos:"v.",      zh:"最佳化；優化",            ex:"The company optimized its supply chain for maximum efficiency.",lv:990 },
+  { word:"consolidate",  pos:"v.",      zh:"合併；鞏固",              ex:"The company plans to consolidate its regional offices.",     lv:990 },
+  { word:"terminate",    pos:"v.",      zh:"終止",                    ex:"The company decided to terminate the employee's contract.",  lv:990 },
+  { word:"restructure",  pos:"v.",      zh:"重整",                    ex:"The company will restructure its operations next month.",    lv:990 },
+  { word:"reimburse",    pos:"v.",      zh:"報銷；償還；補償",        ex:"The company will reimburse employees for travel expenses.",  lv:990 },
+  { word:"disseminate",  pos:"v.",      zh:"散布；傳播",              ex:"The company will disseminate the quarterly reports next week.",lv:990 },
+];
+
+const GRAMMAR = [
+  {
+    tag:"時態", title:"現在完成式 vs 過去式",
+    rule:"現在完成式（have/has + p.p.）強調到目前為止的結果或影響；過去式強調特定時間點發生的事。",
+    toeic:"Part 5 常考：填入 has completed / completed 的選擇",
+    examples:[
+      { en:"The company has launched a new product.", zh:"公司已推出新產品。（結果影響至今）" },
+      { en:"The company launched a new product last year.", zh:"公司去年推出了新產品。（特定時間）" },
+      { en:"She has worked here since 2020.", zh:"她自 2020 年起就在這裡工作。（持續至今）" },
+    ],
+    tip:"since / for / already / yet / just → 現在完成式\nyesterday / last week / in 2020 → 過去式",
+  },
+  {
+    tag:"文法", title:"分詞構句",
+    rule:"用分詞（V-ing 或 p.p.）替代從屬子句，主詞必須與主要子句相同。",
+    toeic:"Part 5、6 常考：句首空格填 Regarding / Having + p.p. 等",
+    examples:[
+      { en:"Having reviewed the report, the manager approved it.", zh:"審閱完報告後，經理批准了它。" },
+      { en:"Located downtown, the office is easy to access.", zh:"位於市中心，辦公室很容易到達。" },
+      { en:"Considering the budget, we chose a simpler option.", zh:"考量到預算，我們選擇了較簡單的方案。" },
+    ],
+    tip:"句首空格 + 逗號 → 通常填分詞構句\nConsidering / Regarding / Given + 名詞 是固定搭配",
+  },
+  {
+    tag:"時態", title:"被動語態",
+    rule:"be + p.p.，強調動作接受者而非執行者。是多益最高頻文法考點之一。",
+    toeic:"Part 5 幾乎每套必考，注意時態與主動被動的判斷",
+    examples:[
+      { en:"The report was submitted on time.", zh:"報告準時提交了。" },
+      { en:"All employees are required to attend.", zh:"所有員工都被要求出席。" },
+      { en:"The meeting has been postponed to Friday.", zh:"會議已延期至星期五。" },
+    ],
+    tip:"主詞是「被做」某事 → 用被動語態\nbe + p.p. 組合：is sent / was approved / has been updated",
+  },
+  {
+    tag:"文法", title:"不定詞 vs 動名詞",
+    rule:"某些動詞後只能接不定詞（to V），某些只能接動名詞（V-ing），某些兩者皆可。",
+    toeic:"Part 5 高頻考點：空格填 to + V 還是 V-ing",
+    examples:[
+      { en:"We plan to expand our business.", zh:"我們計劃擴展業務。（plan + to V）" },
+      { en:"He suggested holding a meeting.", zh:"他建議召開一次會議。（suggest + V-ing）" },
+      { en:"She enjoys attending conferences.", zh:"她喜歡參加研討會。（enjoy + V-ing）" },
+    ],
+    tip:"接 to V：plan, decide, want, expect, agree, refuse\n接 V-ing：enjoy, consider, avoid, suggest, finish, recommend\n兩者皆可：like, love, begin, continue, prefer",
+  },
+  {
+    tag:"子句", title:"關係代名詞",
+    rule:"who 修飾人；which 修飾物；that 兩者皆可（正式文件常用 who / which）。",
+    toeic:"Part 6、7 閱讀理解，Part 5 填空常考",
+    examples:[
+      { en:"The employee who received the award was promoted.", zh:"獲獎的員工被晉升了。" },
+      { en:"The report which was submitted last week needs revision.", zh:"上週提交的報告需要修改。" },
+      { en:"The software that we installed has improved efficiency.", zh:"我們安裝的軟體提高了效率。" },
+    ],
+    tip:"空格後面是動詞 → 填 who / which / that（主格）\n空格後面是主詞 + 動詞 → 填 whom / which（受格）",
+  },
+  {
+    tag:"詞性", title:"副詞位置與詞性判斷",
+    rule:"副詞修飾動詞、形容詞或其他副詞，不修飾名詞（那是形容詞的工作）。",
+    toeic:"Part 5 最常考詞性題：空格填形容詞還是副詞",
+    examples:[
+      { en:"The project was completed successfully.", zh:"專案成功地完成了。（副詞修飾動詞）" },
+      { en:"She is an extremely capable manager.", zh:"她是一位極其能幹的經理。（副詞修飾形容詞）" },
+      { en:"❌ She handled the situation successful.", zh:"❌ 錯誤：successful 是形容詞，不能修飾動詞" },
+    ],
+    tip:"空格 + 形容詞 / 動詞 → 填副詞（-ly）\n形容詞 + 空格 + 名詞 → 填形容詞\n看清楚空格前後是什麼詞性！",
+  },
+];
+
+// ── state ──────────────────────────────────────────────────────────
+const LV_ACTIVE = { all:"active-deep", 400:"active-sage", 600:"active-sand", 800:"active-accent", 990:"active-mid" };
+let state = {
+  tab: "flash",
+  filterLv: "all",
+  cardIdx: 0,
+  flipped: false,
+  known: JSON.parse(localStorage.getItem("toeic_known") || "{}"),
+  streak: 0,
+  todayCount: 0,
+  gramIdx: 0,
+};
+
+function save() { try { localStorage.setItem("toeic_known", JSON.stringify(state.known)); } catch(e){} }
+
+function getDeck() {
+  const filtered = state.filterLv === "all" ? VOCAB : VOCAB.filter(v => v.lv === +state.filterLv);
+  const unknown  = filtered.filter(v => !state.known[v.word]);
+  return unknown.length > 0 ? unknown : filtered;
+}
+
+function render() {
+  const app = document.getElementById("app");
+  const deck = getDeck();
+  const card = deck[state.cardIdx % deck.length];
+  const total = VOCAB.length;
+  const knownCount = Object.keys(state.known).length;
+  const progress = Math.round(knownCount / total * 100);
+
+  app.innerHTML = `
+    <div class="header">
+      <p class="header-eyebrow">多益衝刺計劃</p>
+      <div class="header-row">
+        <h1 class="header-title">TOEIC 700</h1>
+        <div class="header-stats">
+          <div>🔥 連續 <span class="streak">${state.streak}</span> 張</div>
+          <div>今日 <strong>${state.todayCount}</strong> 個 &nbsp;·&nbsp; 已記 <strong>${knownCount}</strong></div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>整體進度</span><span>${knownCount} / ${total}</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn ${state.tab==="flash"?"active":""}" onclick="switchTab('flash')">單字卡</button>
+      <button class="tab-btn ${state.tab==="grammar"?"active":""}" onclick="switchTab('grammar')">文法重點</button>
+    </div>
+
+    <div class="content">
+      ${state.tab === "flash" ? renderFlash(card, deck) : renderGrammar()}
+    </div>
+  `;
+}
+
+function renderFlash(card, deck) {
+  const lvls = ["all","400","600","800","990"];
+  const lvLabel = { all:"全部", 400:"400分", 600:"600分", 800:"800分", 990:"990分" };
+  const pills = lvls.map(lv => {
+    const active = state.filterLv === lv ? LV_ACTIVE[lv] : "";
+    return `<button class="pill ${active}" onclick="setLv('${lv}')">${lvLabel[lv]}</button>`;
+  }).join("");
+
+  const lvClass = `lv-${card.lv}`;
+  const cardBody = state.flipped
+    ? `<div class="card-back">
+         <div class="card-pos">${card.pos}</div>
+         <div class="card-word">${card.word}</div>
+         <div class="card-zh">${card.zh}</div>
+         <div class="card-example">${card.ex}</div>
+       </div>`
+    : `<div class="card-front">
+         <div class="card-pos">${card.pos}</div>
+         <div class="card-word">${card.word}</div>
+         <div class="card-hint">— 點擊翻面 —</div>
+       </div>`;
+
+  return `
+    <div class="pills">${pills}</div>
+    <p class="card-counter">${(state.cardIdx % deck.length) + 1} / ${deck.length}</p>
+    <div class="flashcard" onclick="flipCard()">
+      <span class="level-badge ${lvClass}">${card.lv}</span>
+      ${cardBody}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-pass" onclick="next(false)">還不熟</button>
+      <button class="btn btn-know" onclick="next(true)">記住了 ✓</button>
+    </div>
+    <p class="card-note">記住的單字將從牌堆移除</p>
+  `;
+}
+
+function renderGrammar() {
+  const g = GRAMMAR[state.gramIdx];
+  const dots = GRAMMAR.map((_, i) => {
+    const active = i === state.gramIdx ? "active" : "";
+    return `<button class="gram-dot ${active}" style="width:${i===state.gramIdx?24:8}px" onclick="setGram(${i})"></button>`;
+  }).join("");
+
+  const examples = g.examples.map(ex => `
+    <div class="gram-ex">
+      <div class="gram-ex-en">${ex.en}</div>
+      <div class="gram-ex-zh">${ex.zh}</div>
+    </div>
+  `).join("");
+
+  const prevDisabled = state.gramIdx === 0 ? "disabled" : "";
+  const nextDisabled = state.gramIdx === GRAMMAR.length - 1 ? "disabled" : "";
+
+  return `
+    <div class="gram-dots">${dots}</div>
+    <div class="gram-header">
+      <span class="gram-tag tag-${g.tag}">${g.tag}</span>
+      <span class="gram-title">${g.title}</span>
+    </div>
+    <div class="gram-rule">${g.rule}</div>
+    <div class="gram-toeic">
+      <div class="gram-toeic-label">多益考點</div>
+      <div class="gram-toeic-text">${g.toeic}</div>
+    </div>
+    <div class="gram-ex-label">例句</div>
+    ${examples}
+    <div class="gram-tip">
+      <div class="gram-tip-label">解題秘訣</div>
+      <div class="gram-tip-text">${g.tip}</div>
+    </div>
+    <div class="gram-nav">
+      <button class="btn-nav btn-nav-prev" onclick="setGram(${state.gramIdx-1})" ${prevDisabled}>← 上一則</button>
+      <button class="btn-nav btn-nav-next" onclick="setGram(${state.gramIdx+1})" ${nextDisabled}>下一則 →</button>
+    </div>
+    <p class="gram-page">${state.gramIdx + 1} / ${GRAMMAR.length}</p>
+  `;
+}
+
+// ── actions ────────────────────────────────────────────────────────
+function switchTab(t) { state.tab = t; render(); }
+function setLv(lv) { state.filterLv = lv; state.cardIdx = 0; state.flipped = false; render(); }
+function setGram(i) { if (i < 0 || i >= GRAMMAR.length) return; state.gramIdx = i; render(); }
+function flipCard() { state.flipped = !state.flipped; render(); }
+
+function next(remember) {
+  const deck = getDeck();
+  if (remember) {
+    const card = deck[state.cardIdx % deck.length];
+    state.known[card.word] = true;
+    state.todayCount++;
+    state.streak++;
+    save();
+  } else {
+    state.streak = 0;
+  }
+  state.flipped = false;
+  state.cardIdx = (state.cardIdx + 1) % Math.max(getDeck().length, 1);
+  render();
+}
+
+// init
+render();
+</script>
+</body>
+</html>
